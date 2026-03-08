@@ -1,0 +1,17 @@
+{
+  "name": "generate-artifact",
+  "version": "1.0.0",
+  "description": "AI Edge Function to generate quotes and flashcards from transcript",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "supabase functions serve generate-artifact",
+    "deploy": "supabase functions deploy generate-artifact"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "openai": "^4.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
