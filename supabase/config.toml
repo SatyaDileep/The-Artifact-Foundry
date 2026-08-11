@@ -1,0 +1,20 @@
+# Supabase CLI configuration.
+# project_id is filled in automatically by `supabase link` — do not edit manually.
+project_id = "your-project-ref"
+
+# Functions deployed via `supabase functions deploy <name> --project-ref <ref>`
+# (or after `supabase link`, which sets project_id above).
+
+[functions.generate-artifact]
+# Only signed-in users may generate artifacts (dashboard calls this with the
+# curator's session JWT).
+verify_jwt = true
+
+[functions.index-artifacts]
+# Same — indexing requires a curator session; the function re-checks the
+# caller against the admin_users table.
+verify_jwt = true
+
+[functions.ask]
+# Public RAG endpoint — anyone may ask the library questions.
+verify_jwt = false

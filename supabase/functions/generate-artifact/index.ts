@@ -70,14 +70,18 @@ serve(async (req) => {
       )
     }
 
-    const systemPrompt = `Act as a ${category} expert. Extract 3 high-impact quotes and 5 flashcards from this transcript. Focus on actionable insights. Return ONLY valid JSON in this exact format:
+    const systemPrompt = `Act as a ${category} expert. From this transcript, extract 3 high-impact quotes, 5 flashcards, 3 top moments, and 3-5 topic tags. Focus on actionable insights. Return ONLY valid JSON in this exact format (no markdown fences):
 {
   "quotes": [
-    {"text": "quote text", "timestamp": "optional timestamp"}
+    {"text": "quote text", "timestamp": "optional e.g. 12:40"}
   ],
   "flashcards": [
     {"front": "question or concept", "back": "answer or explanation"}
-  ]
+  ],
+  "top_moments": [
+    {"title": "short moment title", "summary": "2-3 sentence summary", "timestamp_ref": "optional e.g. 14:20"}
+  ],
+  "tags": ["tag1", "tag2"]
 }`
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -87,7 +91,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-70b-versatile',
+        model: Deno.env.get('GROQ_MODEL') ?? 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: finalTranscript.slice(0, 12000) }
@@ -108,11 +112,15 @@ serve(async (req) => {
     const data = await response.json()
     const content = data.choices?.[0]?.message?.content || '{}'
     
+    // Some models wrap JSON in ``` fences — strip them before parsing.
+    const fenced = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+    const clean = fenced ? fenced[1] : content
+
     let parsed
     try {
-      parsed = JSON.parse(content)
+      parsed = JSON.parse(clean)
     } catch {
-      parsed = { quotes: [], flashcards: [] }
+      parsed = { quotes: [], flashcards: [], top_moments: [], tags: [] }
     }
 
     return new Response(
@@ -122,7 +130,7 @@ serve(async (req) => {
 
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }
